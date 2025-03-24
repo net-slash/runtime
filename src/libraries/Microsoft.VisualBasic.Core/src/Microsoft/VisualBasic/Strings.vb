@@ -2001,28 +2001,23 @@ RedimAndExit:
         <SupportedOSPlatform("windows")>
         Public Function StrConv(ByVal [str] As String, ByVal Conversion As VbStrConv, Optional ByVal LocaleID As Integer = 0) As String
 #If TARGET_WINDOWS Then
-            Try
-                Const LANG_CHINESE As Integer = &H4I
-                Const LANG_JAPANESE As Integer = &H11I
-                Const LANG_KOREAN As Integer = &H12I
-                Dim dwMapFlags As Integer
-                Dim loc As CultureInfo
-                Dim langid As Integer
+    If [str] Is Nothing Then Throw New ArgumentNullException(NameOf([str]))
 
-                If (LocaleID = 0 OrElse LocaleID = 1) Then
-                    loc = GetCultureInfo()
-                    LocaleID = loc.LCID()
-                Else
-                    Try
-                        loc = New CultureInfo(LocaleID And &HFFFFI)
-                    Catch ex As StackOverflowException
-                        Throw ex
-                    Catch ex As OutOfMemoryException
-                        Throw ex
-                    Catch
-                        Throw New ArgumentException(SR.Format(SR.Argument_LCIDNotSupported1, CStr(LocaleID)))
-                    End Try
-                End If
+    Select Case Conversion
+        Case VbStrConv.ProperCase
+            Dim culture As CultureInfo = If(LocaleID = 0, CultureInfo.CurrentCulture, New CultureInfo(LocaleID))
+            Return culture.TextInfo.ToTitleCase([str].ToLowerInvariant())
+        Case VbStrConv.Lowercase
+            Return [str].ToLower()
+        Case VbStrConv.Uppercase
+            Return [str].ToUpper()
+        Case Else
+            Throw New ArgumentException($"Unsupported VbStrConv conversion: {Conversion}")
+    End Select
+#Else
+    Throw New PlatformNotSupportedException()
+#End If
+
 
                 langid = PRIMARYLANGID(LocaleID)
 
